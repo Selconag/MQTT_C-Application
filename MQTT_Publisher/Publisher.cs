@@ -1,21 +1,22 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Text.Json;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Server;
 
 namespace MQTTPublisher;
-
 public class Publisher
 {
     static async Task Main(string[] args)
     {
         var mqttFactory = new MqttFactory();
         IMqttClient client = mqttFactory.CreateMqttClient();
-
+        Settings settings = new Settings();
         //Build it first
         var options = mqttFactory.CreateClientOptionsBuilder()
-            .WithClientId(Guid.NewGuid().ToString())
-            .WithTcpServer("test.mosquitto.org" , 1883)
+            .WithClientId(settings.GetClientID)
+            .WithTcpServer(settings.GetActiveTCPAdress, 1883)
             .WithCleanSession()
             .Build();
 
@@ -44,12 +45,20 @@ public class Publisher
 
     private static async Task PublishMessageAsync(IMqttClient client)
     {
-        string messagePayload = "What!";
+        //string messagePayload = "What!";
+        
+        //var message = new MqttApplicationMessageBuilder()
+        //    .WithTopic("Houston")
+        //    .WithPayload(messagePayload)
+        //    .WithAtLeastOnceQoS()
+        //    .Build();
+
         var message = new MqttApplicationMessageBuilder()
-            .WithTopic("Houston")
-            .WithPayload(messagePayload)
-            .WithAtLeastOnceQoS()
-            .Build();
+           .WithTopic("Houston")
+           .WithPayload((AltitudeModel.GenerateRandomAltitudeModel().ToJson()))
+           .WithAtLeastOnceQoS()
+           .Build();
+
         if (client.IsConnected)
         {
             await client.PublishAsync(message);
